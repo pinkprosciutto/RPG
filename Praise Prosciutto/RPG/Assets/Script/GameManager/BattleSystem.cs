@@ -17,8 +17,9 @@ public class BattleSystem : MonoBehaviour
 
     CharacterParty characterParty;
     CharacterManager _enemy;
-
+    public Status _Status { get; set; }
     public event Action<bool> OnBattleOver;
+    public bool canPlayAnimation = true;
 
     int currentAction;
     int currentAbility;
@@ -107,6 +108,7 @@ public class BattleSystem : MonoBehaviour
         state = State.PerformAction;
 
         var ability = player.Character.charAbility[currentAbility];
+     
         yield return InitiateMove(player, enemy, ability);
 
         if (state == State.PerformAction)
@@ -125,8 +127,25 @@ public class BattleSystem : MonoBehaviour
 
     IEnumerator InitiateMove(BattleManager source, BattleManager target, AbilityManager ability)
     {
+        bool canMove = source.Character.OnBeforeMove();
+
+        if (!canMove)
+        {
+            yield return ShowStatusChange(source.Character);
+            yield return source._Hud.UpdateHealth();
+            yield break;
+        }
+        else
+        {
+            if (source.IsPlayer)
+                AnimationManager(ability.Ability.GetName);
+        }
+        yield return ShowStatusChange(source.Character);
+
         ability.Amount--;
         yield return dialogueBox.TypeDialogue($"{source.Character.CharacterBase.GetName} used {ability.Ability.GetName}");
+
+        
 
         if(ability.Ability.Category == AbilityCategory.Status)
         {
@@ -198,6 +217,9 @@ public class BattleSystem : MonoBehaviour
     }
     void CheckBattleOver(BattleManager toastedChar)
     {
+        if (!toastedChar.IsPlayer)
+            _Status = null;
+
         if (toastedChar.IsPlayer)
         {
             var nextChar = characterParty.HealthyCharacter();
@@ -414,13 +436,14 @@ public class BattleSystem : MonoBehaviour
             dialogueBox.EnableDialogue(true);
             var ability = player.Character.charAbility[currentAbility];
 
-            AnimationManager(ability.Ability.GetName);
+            //AnimationManager(ability.Ability.GetName);
 
             StartCoroutine(PlayerAttack());
         } else if (Input.GetKeyDown(KeyCode.X))
         {
             dialogueBox.EnableAbilitySelector(false);
             dialogueBox.EnableActionSelect(true);
+            dialogueBox.EnableDialogue(true);
             ActionSelector();
         }
     }

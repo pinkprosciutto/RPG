@@ -12,15 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b74d42f4d3685540ad0b1e0c03d7118, type: 3}
   m_Name: Froze
   m_EditorClassIdentifier: 
-  characterName: 
+  characterName: Froze
   description: 
   charSprite: {fileID: 0}
   element1: 0
   element2: 0
-  health: 0
-  attackPoint: 0
-  defensePoint: 0
-  specialAttackPoint: 0
-  specialDefensePoint: 0
-  speed: 0
-  learnableAbility: []
+  health: 24
+  attackPoint: 24
+  defensePoint: 24
+  specialAttackPoint: 24
+  specialDefensePoint: 24
+  speed: 13
+  learnableAbility:
+  - characterAbility: {fileID: 11400000, guid: 18b7debd15f1e1f42a8c55c23a1f5d09, type: 2}
+    level: 1

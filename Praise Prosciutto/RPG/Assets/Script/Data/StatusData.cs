@@ -4,6 +4,17 @@ using UnityEngine;
 
 public class StatusData
 {
+    public static void Initialize()
+    {
+        foreach (var kvp in _Status)
+        {
+            var statusID = kvp.Key;
+            var status = kvp.Value;
+
+            status.Id = statusID;
+        }
+    }
+
     public static Dictionary<StatusID, Status> _Status { get; set; } = new Dictionary<StatusID, Status>()
     {
         {
@@ -15,10 +26,9 @@ public class StatusData
                 OnAfterTurn = (CharacterManager character) =>
                 {
                     character.UpdateHP(character.MaxHealth / 7);
-                    character.StatusChange.Enqueue($"{character.CharacterBase.GetName} takes bleed damage");
+                    character.StatusChange.Enqueue($"{character.CharacterBase.GetName} takes bleed damage.");
                 }
             }
-
         },
         {
             StatusID.burn,
@@ -29,7 +39,45 @@ public class StatusData
                 OnAfterTurn = (CharacterManager character) =>
                 {
                     character.UpdateHP(character.MaxHealth / 5);
-                    character.StatusChange.Enqueue($"{character.CharacterBase.GetName} takes burn damage");
+                    character.StatusChange.Enqueue($"{character.CharacterBase.GetName} takes burn damage.");
+                }
+            }
+
+        },
+        {
+            StatusID.charmed,
+            new Status()
+            {
+                Name = "Charmed",
+                StatusMessage = "is charmed",
+                OnBeforeMove = (CharacterManager character) =>
+                {
+                    if (Random.Range(1, 4) == 1)
+                    {
+                        character.StatusChange.Enqueue($"{character.CharacterBase.GetName} is immobilized by the power of love.");
+                        return false; //character can't perform move, immobilized by love 
+                    }
+                    return false; 
+                }
+            }
+
+        },
+        {
+            StatusID.freeze,
+            new Status()
+            {
+                Name = "Freeze",
+                StatusMessage = "is frozen",
+                OnBeforeMove = (CharacterManager character) =>
+                {
+                    if (Random.Range(1, 5) == 1)
+                    {
+                        character.CureStatus();
+                        character.StatusChange.Enqueue($"{character.CharacterBase.GetName} finally broke out of ice.");
+                        return true; //character unfreezes 
+                    }
+                    character.StatusChange.Enqueue($"{character.CharacterBase.GetName} is ice solid.");
+                    return false; //character can't perform move
                 }
             }
 
@@ -39,6 +87,5 @@ public class StatusData
 
 public enum StatusID
 {
-    //posion burn sleep
-    none, bleed, burn, charmed
+    none, bleed, burn, charmed, freeze
 }

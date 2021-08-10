@@ -15,6 +15,11 @@ MonoBehaviour:
   abilityName: Bite
   description: 
   element: 1
-  abilityAccuracy: 0
+  abilityAccuracy: 100
   abilityStrength: 20
   abilityAmount: 15
+  category: 0
+  effect:
+    boosts: []
+    status: 1
+  target: 1

@@ -15,6 +15,11 @@ MonoBehaviour:
   abilityName: Slash
   description: 
   element: 1
-  abilityAccuracy: 0
+  abilityAccuracy: 100
   abilityStrength: 15
   abilityAmount: 20
+  category: 2
+  effect:
+    boosts: []
+    status: 1
+  target: 1

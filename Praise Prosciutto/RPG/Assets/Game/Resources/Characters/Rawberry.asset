@@ -22,9 +22,13 @@ MonoBehaviour:
   defensePoint: 19
   specialAttackPoint: 4
   specialDefensePoint: 24
-  speed: 0
+  speed: 10
   learnableAbility:
   - characterAbility: {fileID: 11400000, guid: eecc6fc300416644daa090278434d439, type: 2}
     level: 1
   - characterAbility: {fileID: 11400000, guid: 5fe52fb395f24484aa21d7dd19db30c4, type: 2}
     level: 2
+  - characterAbility: {fileID: 11400000, guid: 38267e0a620af584db60f822a77b8a73, type: 2}
+    level: 3
+  - characterAbility: {fileID: 11400000, guid: 18b7debd15f1e1f42a8c55c23a1f5d09, type: 2}
+    level: 4

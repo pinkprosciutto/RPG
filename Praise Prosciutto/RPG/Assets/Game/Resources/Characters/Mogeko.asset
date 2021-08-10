@@ -17,14 +17,14 @@ MonoBehaviour:
   charSprite: {fileID: 5199887653909221816, guid: 36a51c25e51ad364a9ba24dd982aec4c, type: 3}
   element1: 1
   element2: 0
-  health: 20
+  health: 12
   attackPoint: 12
   defensePoint: 12
-  specialAttackPoint: 12
-  specialDefensePoint: 12
-  speed: 0
+  specialAttackPoint: 4
+  specialDefensePoint: 4
+  speed: 12
   learnableAbility:
-  - characterAbility: {fileID: 11400000, guid: 5fe52fb395f24484aa21d7dd19db30c4, type: 2}
-    level: 1
-  - characterAbility: {fileID: 11400000, guid: c4388535e9db1b24f828a16a51c58a94, type: 2}
+  - characterAbility: {fileID: 11400000, guid: 18b7debd15f1e1f42a8c55c23a1f5d09, type: 2}
     level: 2
+  - characterAbility: {fileID: 11400000, guid: 5fe52fb395f24484aa21d7dd19db30c4, type: 2}
+    level: 3

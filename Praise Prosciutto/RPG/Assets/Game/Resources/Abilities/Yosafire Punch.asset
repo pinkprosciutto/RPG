@@ -20,3 +20,8 @@ MonoBehaviour:
   abilityAccuracy: 12
   abilityStrength: 12
   abilityAmount: 32
+  category: 0
+  effect:
+    boosts: []
+    status: 0
+  target: 0

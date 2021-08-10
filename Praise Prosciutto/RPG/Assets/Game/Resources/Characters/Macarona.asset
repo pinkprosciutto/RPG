@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b74d42f4d3685540ad0b1e0c03d7118, type: 3}
-  m_Name: Cute
+  m_Name: Macarona
   m_EditorClassIdentifier: 
-  characterName: 
+  characterName: Macarona
   description: 
   charSprite: {fileID: 0}
   element1: 0
   element2: 0
-  health: 0
-  attackPoint: 0
-  defensePoint: 0
-  specialAttackPoint: 0
-  specialDefensePoint: 0
-  speed: 0
+  health: 23
+  attackPoint: 12
+  defensePoint: 23
+  specialAttackPoint: 23
+  specialDefensePoint: 12
+  speed: 12
   learnableAbility: []

@@ -11,6 +11,11 @@ public class GameControl : MonoBehaviour
     [SerializeField] BattleSystem battleSystem;
     [SerializeField] Camera worldCamera;
 
+    void Awake()
+    {
+        StatusData.Initialize();
+    }
+
 
     void Start()
     {

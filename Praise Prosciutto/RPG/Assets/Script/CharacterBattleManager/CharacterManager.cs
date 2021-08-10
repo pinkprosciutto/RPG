@@ -30,9 +30,14 @@ public class CharacterManager
     public Dictionary <Stat, int> Stats { get; private set; } //calculate and store stat 
     public Dictionary<Stat, int> StatBoost { get; private set; }
     public Status _Status { get; set; }
+    public int StatusTime { get; set; }
+
+    public Status VolatileStatus { get; set; }
+    public int VolatileStatusTime { get; set; }
 
     public Queue<string> StatusChange { get; private set; } = new Queue<string>(); //store message in a queue for status change
 
+    public event System.Action OnStatusChanged;
     public void Initialize()
     {
         HP = MaxHealth;
@@ -55,6 +60,7 @@ public class CharacterManager
         HP = MaxHealth;
 
         ResetBoost();
+        _Status = null;
     }
 
     void CalculateStats()
@@ -192,15 +198,39 @@ public class CharacterManager
 
     public void SetStatus(StatusID statusID)
     {
-        _Status = StatusData._Status[statusID];
-        StatusChange.Enqueue($"{CharacterBase.GetName} {_Status.StatusMessage}");
+        if (_Status != null) return;
 
+        _Status = StatusData._Status[statusID];
+        _Status?.OnStart?.Invoke(this);
+        StatusChange.Enqueue($"{CharacterBase.GetName} {_Status.StatusMessage}");
+        OnStatusChanged?.Invoke();
+
+    }
+
+    public void CureStatus()
+    {
+        OnStatusChanged?.Invoke();
+        _Status = null;
     }
 
     public AbilityManager GetAbilityForEnemy()
     {
         int random = Random.Range(0, charAbility.Count);
         return charAbility[random];
+    }
+
+    public bool OnBeforeMove()
+    {
+        bool canPerformMove = true;
+        if (_Status?.OnBeforeMove != null)
+        {
+            if (!_Status.OnBeforeMove(this))
+            {
+                canPerformMove = false;
+            }
+        }
+
+        return canPerformMove;
     }
 
     public void OnAfterTurn()

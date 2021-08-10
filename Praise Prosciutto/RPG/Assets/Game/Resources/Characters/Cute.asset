@@ -9,12 +9,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e188cd2d20f52c34bbfe6bc32838a9b4, type: 3}
-  m_Name: Bite
+  m_Script: {fileID: 11500000, guid: 1b74d42f4d3685540ad0b1e0c03d7118, type: 3}
+  m_Name: Cute
   m_EditorClassIdentifier: 
-  abilityName: Bite
+  characterName: 
   description: 
-  element: 1
-  abilityAccuracy: 0
-  abilityStrength: 20
-  abilityAmount: 15
+  charSprite: {fileID: 0}
+  element1: 0
+  element2: 0
+  health: 0
+  attackPoint: 0
+  defensePoint: 0
+  specialAttackPoint: 0
+  specialDefensePoint: 0
+  speed: 0
+  learnableAbility: []

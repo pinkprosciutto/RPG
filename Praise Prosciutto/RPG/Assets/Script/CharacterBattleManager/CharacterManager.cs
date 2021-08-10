@@ -2,19 +2,33 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class CharacterManager
 {
-    public CharacterScriptableObject CharacterBase { get; set; }
-    public int Level { get; set; }
+    [SerializeField] CharacterScriptableObject _base;
+    [SerializeField] int level;
+
+    public CharacterScriptableObject CharacterBase 
+    {
+        get
+        {
+            return _base;
+        }
+    }
+    public int Level
+    {
+        get
+        {
+            return level;
+        }
+    }
 
     public int HP { get; set; }
 
     public List<AbilityManager> charAbility { get; set; }
 
-    public CharacterManager(CharacterScriptableObject baseChar, int baseLevel)
+    public void Initialize()
     {
-        CharacterBase = baseChar;
-        Level = baseLevel;
         HP = MaxHealth;
 
         //Learn new abilities depending on its level
@@ -35,7 +49,7 @@ public class CharacterManager
 
     public int MaxHealth
     {
-        get { return Mathf.FloorToInt((CharacterBase.AtkPoint * ((15 + Level) / 5f))); }
+        get { return Mathf.FloorToInt((CharacterBase.HealthPoint * ((8 + Level) / 5f))); }
     }
 
     public int Attack
@@ -86,9 +100,13 @@ public class CharacterManager
             Fainted = false
         };
 
+        //check if it's physical or elemental attack
+        float attack = (ability.Ability.IsSpecial) ? attacker.SpecialAttack : attacker.Attack;
+        float defense = (ability.Ability.IsSpecial) ? SpecialDefense : Defense;
+
         float damageModifier = Random.Range(0.8f, 1f) * element * critHit;
-        float attack = (2 * attacker.Level + 10) / 250f;
-        float d = attack * ability.Ability.Strength * ((float)attacker.Attack / Defense) + 2;
+        float a = (2 * attacker.Level + 10) / 250f;
+        float d = a * ability.Ability.Strength * ((float)attack / defense) + 2;
         int dmg = Mathf.FloorToInt(d * damageModifier);
 
         HP -= dmg;

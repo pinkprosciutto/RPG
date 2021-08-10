@@ -10,21 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b74d42f4d3685540ad0b1e0c03d7118, type: 3}
-  m_Name: Mogeko
+  m_Name: Rawberry
   m_EditorClassIdentifier: 
-  characterName: Mogeko
+  characterName: Rawberry
   description: 
-  charSprite: {fileID: 5199887653909221816, guid: 36a51c25e51ad364a9ba24dd982aec4c, type: 3}
-  element1: 1
+  charSprite: {fileID: 0}
+  element1: 3
   element2: 0
-  health: 20
-  attackPoint: 12
-  defensePoint: 12
-  specialAttackPoint: 12
-  specialDefensePoint: 12
+  health: 10
+  attackPoint: 25
+  defensePoint: 19
+  specialAttackPoint: 4
+  specialDefensePoint: 24
   speed: 0
   learnableAbility:
-  - characterAbility: {fileID: 11400000, guid: 5fe52fb395f24484aa21d7dd19db30c4, type: 2}
+  - characterAbility: {fileID: 11400000, guid: eecc6fc300416644daa090278434d439, type: 2}
     level: 1
-  - characterAbility: {fileID: 11400000, guid: c4388535e9db1b24f828a16a51c58a94, type: 2}
+  - characterAbility: {fileID: 11400000, guid: 5fe52fb395f24484aa21d7dd19db30c4, type: 2}
     level: 2

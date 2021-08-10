@@ -1,48 +1,57 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum State { Start, PlayerTurn, PlayerMove, EnemyMove, Busy}
+public enum State { Start, ActionSelect, AbilitySelect, PerformAction, Busy, PartyScreen, BattleOver}
 
 public class BattleSystem : MonoBehaviour
 {
     [SerializeField] BattleManager player;
     [SerializeField] BattleManager enemy;
-    [SerializeField] Hud playerHud;
-    [SerializeField] Hud enemyHud;
+    
     [SerializeField] BattleDialogue dialogueBox;
     [SerializeField] List<Image> image;
+    [SerializeField] PartyScreen partyScreen;
+
+    CharacterParty characterParty;
+    CharacterManager _enemy;
+
+    public event Action<bool> OnBattleOver;
 
     int currentAction;
     int currentAbility;
+    int currentMember;
     State state;
 
-    private void Start()
+    public void StartBattle(CharacterParty characters, CharacterManager enemy)
     {
+        characterParty = characters;
+        _enemy = enemy;
         StartCoroutine(SetupBattle());
-        Debug.Log("Ready");
+
         //image[0].gameObject.SetActive(true);
     }
 
     public IEnumerator SetupBattle()
     {
-        player.Setup();
-        enemy.Setup();
-        playerHud.SetData(player.Character);
-        enemyHud.SetData(enemy.Character);
+        player.Setup(characterParty.HealthyCharacter());
+        enemy.Setup(_enemy);
 
         dialogueBox.SetAbility(player.Character.charAbility);
 
+        partyScreen.Initialize();
+
         yield return dialogueBox.TypeDialogue($"{enemy.Character.CharacterBase.GetName} challenges you!");
 
-        PlayerTurn();
+        ActionSelector();
     }
 
-    void PlayerTurn()
+    void ActionSelector()
     {
-        state = State.PlayerTurn;
-        int x = Random.Range(1, 10);
+        state = State.ActionSelect;
+        int x = UnityEngine.Random.Range(1, 10);
         switch (x)
         {
             case 1:
@@ -70,22 +79,75 @@ public class BattleSystem : MonoBehaviour
 
     IEnumerator EnemyTurn()
     {
-        state = State.EnemyMove;
+        state = State.PerformAction;
 
         var ability = enemy.Character.GetAbilityForEnemy();
-        yield return dialogueBox.TypeDialogue($"{enemy.Character.CharacterBase.GetName} used {ability.Ability.GetName}");
 
-        var damageDetail = player.Character.TakeDamage(ability, player.Character);
-        yield return playerHud.UpdateHealth();
+        yield return InitiateMove(enemy, player, ability);
+        if (state == State.PerformAction)
+        {
+            ActionSelector();
+        }
+    }
+
+    IEnumerator PlayerAttack()
+    {
+        state = State.PerformAction;
+
+        var ability = player.Character.charAbility[currentAbility];
+        yield return InitiateMove(player, enemy, ability);
+
+        if (state == State.PerformAction)
+        {
+            StartCoroutine(EnemyTurn());
+        }
+
+    }
+
+    void BattleOver(bool victory)
+    {
+        state = State.BattleOver;
+        OnBattleOver(victory);
+    }
+
+    IEnumerator InitiateMove(BattleManager source, BattleManager target, AbilityManager ability)
+    {
+        ability.Amount--;
+        yield return dialogueBox.TypeDialogue($"{source.Character.CharacterBase.GetName} used {ability.Ability.GetName}");
+
+        target.HitAnimation();
+        var damageDetail = target.Character.TakeDamage(ability, source.Character);
+        yield return target._Hud.UpdateHealth();
         yield return ShowDamage(damageDetail);
 
         if (damageDetail.Fainted)
         {
-            yield return dialogueBox.TypeDialogue($"{player.Character.CharacterBase.GetName} is downed");
+            yield return dialogueBox.TypeDialogue($"{target.Character.CharacterBase.GetName} is toasted");
+            target.DeathAnimation();
+            yield return new WaitForSeconds(2f);
+
+            CheckBattleOver(target);
+        }
+    }
+
+    void CheckBattleOver(BattleManager toastedChar)
+    {
+        if (toastedChar.IsPlayer)
+        {
+            var nextChar = characterParty.HealthyCharacter();
+            //send out next character if there is one
+            if (nextChar != null)
+            {
+                OpenPartyScreen();
+            }
+            else
+            {
+                BattleOver(false);
+            }
         }
         else
         {
-            PlayerTurn();
+            BattleOver(true);
         }
     }
 
@@ -105,47 +167,94 @@ public class BattleSystem : MonoBehaviour
 
 
     }
-    void PlayerMove()
+    void MoveSelection()
     {
-        state = State.PlayerMove;
+        state = State.AbilitySelect;
         dialogueBox.EnableActionSelect(false);
         dialogueBox.EnableDialogue(false);
         dialogueBox.EnableAbilitySelector(true);
     }
 
-    IEnumerator PlayerAttack()
+    public void HandleUpdate()
     {
-        state = State.Busy;
-
-        var ability = player.Character.charAbility[currentAbility];
-        yield return dialogueBox.TypeDialogue($"{player.Character.CharacterBase.GetName} used {ability.Ability.GetName}");
-
-        Debug.Log(ability.Ability.GetName);
-
-        var damageDetail = enemy.Character.TakeDamage(ability, player.Character);
-        yield return enemyHud.UpdateHealth();
-        yield return ShowDamage(damageDetail);
-
-        if (damageDetail.Fainted)
+        if (state == State.ActionSelect)
         {
-            yield return dialogueBox.TypeDialogue($"{enemy.Character.CharacterBase.GetName} is downed");
+            ActionSelection();
+        } else if (state == State.AbilitySelect)
+        {
+            AbilitySelection();
+        } else if (state == State.PartyScreen)
+        {
+            HandlePartySelect();
         }
-        else
+
+    }
+
+    void OpenPartyScreen()
+    {
+        state = State.PartyScreen;
+        partyScreen.SetPartyData(characterParty.Characters);
+        partyScreen.gameObject.SetActive(true);
+    }
+
+    void HandlePartySelect()
+    {
+        if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            StartCoroutine(EnemyTurn());
+            if (currentMember < 3)
+            {
+                ++currentMember;
+            }
+
+        }
+        else if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            if (currentMember > 0)
+            {
+                --currentMember;
+            }
+        }
+
+        partyScreen.UpdateMemberSelect(currentMember);
+
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            var selectedMember = characterParty.Characters[currentMember];
+            if (selectedMember.HP <= 0)
+            {
+                partyScreen.SetMessage("The character is toasted.");
+                return;
+            }   
+            if (selectedMember == player.Character)
+            {
+                partyScreen.SetMessage("That's the same character, stoopid");
+                return;
+            }
+
+            partyScreen.gameObject.SetActive(false);
+            state = State.Busy;
+            StartCoroutine(SwitchCharacter(selectedMember));
+        } 
+        else if (Input.GetKeyDown(KeyCode.X))
+        {
+            partyScreen.gameObject.SetActive(false);
+            ActionSelector();
         }
     }
 
-    private void Update()
+    IEnumerator SwitchCharacter(CharacterManager newCharacter)
     {
-        if (state == State.PlayerTurn)
+        if (player.Character.HP > 0)
         {
-            ActionSelection();
-        } else if (state == State.PlayerMove)
-        {
-            AbilitySelection();
+            yield return dialogueBox.TypeDialogue($"{player.Character.CharacterBase.GetName} retreats!");
+            yield return new WaitForSeconds(1f);
         }
 
+        player.Setup(newCharacter);
+        dialogueBox.SetAbility(newCharacter.charAbility);
+        yield return dialogueBox.TypeDialogue($"{newCharacter.CharacterBase.GetName} is out!");
+
+        StartCoroutine(EnemyTurn());
     }
 
     void ActionSelection()
@@ -163,8 +272,8 @@ public class BattleSystem : MonoBehaviour
             {
                 --currentAction;
             }
-
         }
+
         dialogueBox.UpdateActionSelect(currentAction);
 
         if (Input.GetKeyDown(KeyCode.Z))
@@ -173,11 +282,12 @@ public class BattleSystem : MonoBehaviour
             {
                 case 0:
                     //Attack
-                    PlayerMove();
+                    MoveSelection();
                     break;
 
                 case 1:
-                    //Item
+                    //Party
+                    OpenPartyScreen();
                     break;
 
                 case 2:
@@ -232,6 +342,11 @@ public class BattleSystem : MonoBehaviour
             AnimationManager(ability.Ability.GetName);
 
             StartCoroutine(PlayerAttack());
+        } else if (Input.GetKeyDown(KeyCode.X))
+        {
+            dialogueBox.EnableAbilitySelector(false);
+            dialogueBox.EnableActionSelect(true);
+            ActionSelector();
         }
     }
 

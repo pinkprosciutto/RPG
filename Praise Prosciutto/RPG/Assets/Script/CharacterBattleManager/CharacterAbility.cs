@@ -47,5 +47,21 @@ public class CharacterAbility : ScriptableObject
         get { return abilityAmount; }
     }
 
+    public bool IsSpecial
+    {
 
+        get
+        {
+            if (element == CharacterElement.Pyro || element == CharacterElement.Demon || element == CharacterElement.ManlyBadassHero
+             || element == CharacterElement.Spooky || element == CharacterElement.Prosciutto )
+            {
+                 return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+    }
 }

@@ -17,5 +17,5 @@ MonoBehaviour:
     Crit.
   element: 1
   abilityAccuracy: 0
-  abilityStrength: 15
+  abilityStrength: 111
   abilityAmount: 10

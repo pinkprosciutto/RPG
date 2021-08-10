@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,7 +9,10 @@ public class PlayerControl : MonoBehaviour
     public Transform point; //determines where to move
     public bool isMoving;
     public LayerMask stopMovement;
+    public LayerMask enemyLayer;
     private Vector2 input;
+
+    public event Action OnEncounter;
 
     private Animator anim;
     private void Awake()
@@ -16,7 +20,7 @@ public class PlayerControl : MonoBehaviour
         anim = GetComponent<Animator>();
     }
 
-    private void Update()
+    public void HandleUpdate()
     {
         PlayerMovement();
         
@@ -111,6 +115,8 @@ public class PlayerControl : MonoBehaviour
         }
         transform.position = newPosition;
         isMoving = false;
+
+        Encounter();
     }
 
     private bool StopMovement(Vector3 newPosition)
@@ -121,5 +127,18 @@ public class PlayerControl : MonoBehaviour
             return false;
         }
         return true;
+    }
+
+    private void Encounter()
+    {
+        if (Physics2D.OverlapCircle(transform.position, 0.1f, enemyLayer) != null)
+        {
+            if (UnityEngine.Random.Range(1, 101) <= 50f)
+            {
+                OnEncounter();
+                anim.SetBool("Moving", false);
+            }
+        }
+
     }
 }

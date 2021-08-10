@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b74d42f4d3685540ad0b1e0c03d7118, type: 3}
+  m_Name: Yosafire
+  m_EditorClassIdentifier: 
+  characterName: Yosafire
+  description: 
+  charSprite: {fileID: 0}
+  element1: 2
+  element2: 1
+  health: 53
+  attackPoint: 12
+  defensePoint: 2
+  specialAttackPoint: 2
+  specialDefensePoint: 2
+  speed: 2
+  learnableAbility:
+  - characterAbility: {fileID: 11400000, guid: 04234db764a1bc847a4779acf9cd56f3, type: 2}
+    level: 1
+  - characterAbility: {fileID: 11400000, guid: 55b445f51b715a2439fd886f58ab6fd4, type: 2}
+    level: 2
+  - characterAbility: {fileID: 11400000, guid: eecc6fc300416644daa090278434d439, type: 2}
+    level: 3
+  - characterAbility: {fileID: 11400000, guid: 5fe52fb395f24484aa21d7dd19db30c4, type: 2}
+    level: 4
+  - characterAbility: {fileID: 11400000, guid: c4388535e9db1b24f828a16a51c58a94, type: 2}
+    level: 5

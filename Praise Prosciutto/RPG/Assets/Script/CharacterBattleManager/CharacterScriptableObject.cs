@@ -103,16 +103,27 @@ public enum CharacterElement
     Prosciutto
 
 }
-
+public enum Stat
+{
+    Attack,
+    SpecialAttack,
+    Defense,
+    SpecialDefense,
+    Speed
+}
 public class Element
 {
     static float[][] Elementchart =
     {   //                        NOR    PYR   DEM   FLY    SPO     Bun     Ins    Man     Pro
         /* Normal */ new float[] { 1f,   1f,   1f,  .5f,   .5f,     2f,      1f,   .5f,   .5f},
-        /* Pyro   */ new float[] { 1f,   1f,   1f,   1f,    2f,     2f,      2f,   .5f,   .5f},
-        /* Demon */  new float[] { 2f,   1f,   1f,   2f,    1f,     2f,     .5f,   .5f,   .5f},
-        /* Flying */ new float[] { 2f,   1f,  .5f,   1f,    1f,     2f,      2f,   .5f,   .5f},
-        /* Spooky */ new float[] { 2f,  .5f,   1f,   1f,    2f,     2f,      2f,    .5f,   .5f}
+        /* Pyro   */ new float[] { 1f,  .5f,   1f,   1f,    2f,     2f,      2f,   .5f,   .5f},
+        /* Demon */  new float[] { 2f,   1f,  .5f,   2f,    1f,     2f,     .5f,   .5f,   .5f},
+        /* Flying */ new float[] { 2f,   1f,  .5f,  .5f,    1f,     2f,      2f,   .5f,   .5f},
+        /* Spooky */ new float[] { 2f,  .5f,   1f,   1f,    2f,     2f,      1f,    .5f,   .5f},
+        /* BunBun */ new float[] { .5f,  .5f,  .5f,  .5f,  .5f,    .5f,     .5f,    .5f,   .5f},
+        /* Insect */ new float[] { 1f,  .5f,   2f,   .5f,    1f,     2f,     1f,    .5f,   .5f},
+        /* Manly  */ new float[] { 2f,   2f,   2f,   2f,    2f,     2f,      2f,    .5f,   .5f},
+        /* Prosci  */ new float[] { 2f,   2f,   2f,   2f,    2f,     2f,      2f,    .5f,   .5f}
     };
 
     public static float GetEffectivness(CharacterElement attackElement, CharacterElement defenseElement)

@@ -45,7 +45,19 @@ public class BattleSystem : MonoBehaviour
 
         yield return dialogueBox.TypeDialogue($"{enemy.Character.CharacterBase.GetName} challenges you!");
 
-        ActionSelector();
+        StartFirst();
+    }
+
+    void StartFirst()
+    {
+        if (player.Character.Speed >= enemy.Character.Speed)
+        {
+            ActionSelector();
+        }
+        else
+        {
+            StartCoroutine(EnemyTurn());
+        }
     }
 
     void ActionSelector()
@@ -55,7 +67,7 @@ public class BattleSystem : MonoBehaviour
         switch (x)
         {
             case 1:
-                StartCoroutine(dialogueBox.TypeDialogue("Wonder what's for lunch."));
+                StartCoroutine(dialogueBox.TypeDialogue("Yummy Prosciutto."));
                 break;
 
             case 2:
@@ -67,7 +79,7 @@ public class BattleSystem : MonoBehaviour
                 break;
 
             case 4:
-                StartCoroutine(dialogueBox.TypeDialogue("Just Monika."));
+                StartCoroutine(dialogueBox.TypeDialogue("Just Prosciutto."));
                 break;
 
             case 5: case 6: case 7: case 8: case 9: case 10:
@@ -107,6 +119,7 @@ public class BattleSystem : MonoBehaviour
     void BattleOver(bool victory)
     {
         state = State.BattleOver;
+        characterParty.Characters.ForEach(p => p.OnBattleOver()); //reset stats of every characters
         OnBattleOver(victory);
     }
 
@@ -115,12 +128,20 @@ public class BattleSystem : MonoBehaviour
         ability.Amount--;
         yield return dialogueBox.TypeDialogue($"{source.Character.CharacterBase.GetName} used {ability.Ability.GetName}");
 
-        target.HitAnimation();
-        var damageDetail = target.Character.TakeDamage(ability, source.Character);
-        yield return target._Hud.UpdateHealth();
-        yield return ShowDamage(damageDetail);
-
-        if (damageDetail.Fainted)
+        if(ability.Ability.Category == AbilityCategory.Status)
+        {
+            yield return RunAbilityEffect(ability, source.Character, target.Character);
+        }
+        else
+        {
+            target.HitAnimation();
+            var damageDetail = target.Character.TakeDamage(ability, source.Character);
+            yield return target._Hud.UpdateHealth();
+            yield return ShowDamage(damageDetail);
+        }
+        
+        //dead
+        if (target.Character.HP <= 0)
         {
             yield return dialogueBox.TypeDialogue($"{target.Character.CharacterBase.GetName} is toasted");
             target.DeathAnimation();
@@ -128,8 +149,53 @@ public class BattleSystem : MonoBehaviour
 
             CheckBattleOver(target);
         }
-    }
+        //display damage dealt by status
+        source.Character.OnAfterTurn();
+        yield return ShowStatusChange(source.Character);
+        yield return source._Hud.UpdateHealth();
+        //if character dies after status
+        if (source.Character.HP <= 0)
+        {
+            yield return dialogueBox.TypeDialogue($"{source.Character.CharacterBase.GetName} is toasted");
+            source.DeathAnimation();
+            yield return new WaitForSeconds(2f);
 
+            CheckBattleOver(source);
+        }
+    }
+    IEnumerator RunAbilityEffect(AbilityManager ability, CharacterManager source, CharacterManager target)
+    {
+        var effects = ability.Ability.Effects;
+
+        //Stat changing
+        if (effects.Boosts != null)
+        {
+            if (ability.Ability.Target == AbilityTarget.Self)
+            {
+                source.ApplyBoost(effects.Boosts);
+            }
+            else
+            {
+                target.ApplyBoost(effects.Boosts);
+            }
+        }
+
+        //Status effect
+        if (effects.StatusEffect != StatusID.none) //has no status 
+        {
+            target.SetStatus(effects.StatusEffect);
+        }
+        yield return ShowStatusChange(source);
+        yield return ShowStatusChange(target);
+    }
+    IEnumerator ShowStatusChange(CharacterManager character)
+    {
+        while (character.StatusChange.Count > 0)
+        {
+            var message = character.StatusChange.Dequeue(); //pull message out
+            yield return dialogueBox.TypeDialogue(message);
+        }
+    }
     void CheckBattleOver(BattleManager toastedChar)
     {
         if (toastedChar.IsPlayer)
@@ -244,8 +310,10 @@ public class BattleSystem : MonoBehaviour
 
     IEnumerator SwitchCharacter(CharacterManager newCharacter)
     {
+        bool currentToastedChar = true;
         if (player.Character.HP > 0)
         {
+            currentToastedChar = false;
             yield return dialogueBox.TypeDialogue($"{player.Character.CharacterBase.GetName} retreats!");
             yield return new WaitForSeconds(1f);
         }
@@ -254,7 +322,14 @@ public class BattleSystem : MonoBehaviour
         dialogueBox.SetAbility(newCharacter.charAbility);
         yield return dialogueBox.TypeDialogue($"{newCharacter.CharacterBase.GetName} is out!");
 
-        StartCoroutine(EnemyTurn());
+        if (currentToastedChar)
+        {
+            StartFirst();
+        } else
+        {
+            StartCoroutine(EnemyTurn());
+        }
+
     }
 
     void ActionSelection()

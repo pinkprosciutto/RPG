@@ -16,6 +16,9 @@ public class CharacterAbility : ScriptableObject
     [SerializeField] int abilityAccuracy;
     [SerializeField] int abilityStrength;
     [SerializeField] int abilityAmount;
+    [SerializeField] AbilityCategory category;
+    [SerializeField] AbilityEffect effect;
+    [SerializeField] AbilityTarget target;
 
     public string GetName
     {
@@ -47,21 +50,52 @@ public class CharacterAbility : ScriptableObject
         get { return abilityAmount; }
     }
 
-    public bool IsSpecial
+    public AbilityCategory Category
     {
-
-        get
-        {
-            if (element == CharacterElement.Pyro || element == CharacterElement.Demon || element == CharacterElement.ManlyBadassHero
-             || element == CharacterElement.Spooky || element == CharacterElement.Prosciutto )
-            {
-                 return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
+        get { return category; }
     }
+
+    public AbilityEffect Effects
+    {
+        get { return effect;  }
+    }
+
+    public AbilityTarget Target
+    {
+        get { return target; }
+    }
+}
+
+[System.Serializable]
+public class AbilityEffect
+{
+    [SerializeField] List<StatBoost> boosts;
+    [SerializeField] StatusID status;
+
+    public List<StatBoost> Boosts
+    {
+        get { return boosts; }
+    }
+
+    public StatusID StatusEffect
+    {
+        get { return status; }
+    }
+}
+
+[System.Serializable]
+public class StatBoost
+{
+    public Stat stat;
+    public int boost;   
+}
+
+public enum AbilityCategory
+{
+    Physical, Special, Status
+}
+
+public enum AbilityTarget
+{
+    Self, Enemy
 }

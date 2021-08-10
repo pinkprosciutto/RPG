@@ -25,9 +25,12 @@ public class Hud : MonoBehaviour
     public IEnumerator UpdateHealth()
     {
         //yield return healthBar.transform.localScale = new Vector2(((float)_character.HP / _character.MaxHealth), 1f);
-        yield return decreaseHPBar((float)_character.HP / _character.MaxHealth);
-
-        yield return healthText.text = "HP " + _character.HP + "/ " + _character.MaxHealth;
+        if (_character.HPChanged)
+        {
+            yield return decreaseHPBar((float)_character.HP / _character.MaxHealth);
+            yield return healthText.text = "HP " + _character.HP + "/ " + _character.MaxHealth;
+            _character.HPChanged = false;
+        }
     }
 
     public IEnumerator decreaseHPBar(float newHP)

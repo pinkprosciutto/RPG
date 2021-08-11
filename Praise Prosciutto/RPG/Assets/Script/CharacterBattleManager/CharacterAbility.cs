@@ -18,6 +18,7 @@ public class CharacterAbility : ScriptableObject
     [SerializeField] int abilityAmount;
     [SerializeField] AbilityCategory category;
     [SerializeField] AbilityEffect effect;
+    [SerializeField] List<SecondaryEffect> secondaryEffect;
     [SerializeField] AbilityTarget target;
 
     public string GetName
@@ -55,6 +56,11 @@ public class CharacterAbility : ScriptableObject
         get { return category; }
     }
 
+    public List<SecondaryEffect> SecondaryEffects
+    {
+        get { return secondaryEffect; }
+    }
+
     public AbilityEffect Effects
     {
         get { return effect;  }
@@ -81,6 +87,24 @@ public class AbilityEffect
     {
         get { return status; }
     }
+}
+
+[System.Serializable]
+public class SecondaryEffect : AbilityEffect //inherit
+{
+    [SerializeField] int chance;
+    [SerializeField] AbilityTarget target;
+
+    public int Chance
+    {
+        get { return chance; }
+    }
+
+    public AbilityTarget Target
+    {
+        get { return target; }
+    }
+  
 }
 
 [System.Serializable]

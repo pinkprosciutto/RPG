@@ -27,6 +27,7 @@ public class CharacterManager
     public int HP { get; set; }
 
     public List<AbilityManager> charAbility { get; set; }
+    public AbilityManager CurrentAbility { get; set; }
     public Dictionary <Stat, int> Stats { get; private set; } //calculate and store stat 
     public Dictionary<Stat, int> StatBoost { get; private set; }
     public Status _Status { get; set; }

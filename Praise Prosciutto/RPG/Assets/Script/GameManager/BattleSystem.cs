@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum State { Start, ActionSelect, AbilitySelect, PerformAction, Busy, PartyScreen, BattleOver}
+public enum State { Start, ActionSelect, AbilitySelect, PerformAction, RunningTurn, Busy, PartyScreen, BattleOver}
+public enum CombatAction { Move, SwitchCharacter, Escape }
 
 public class BattleSystem : MonoBehaviour
 {
@@ -25,6 +26,7 @@ public class BattleSystem : MonoBehaviour
     int currentAbility;
     int currentMember;
     State state;
+    State? previousState; //nullable
 
     public void StartBattle(CharacterParty characters, CharacterManager enemy)
     {
@@ -33,6 +35,23 @@ public class BattleSystem : MonoBehaviour
         StartCoroutine(SetupBattle());
 
         //image[0].gameObject.SetActive(true);
+    }
+
+    public void HandleUpdate()
+    {
+        if (state == State.ActionSelect)
+        {
+            ActionSelection();
+        }
+        else if (state == State.AbilitySelect)
+        {
+            AbilitySelection();
+        }
+        else if (state == State.PartyScreen)
+        {
+            HandlePartySelect();
+        }
+
     }
 
     public IEnumerator SetupBattle()
@@ -46,19 +65,7 @@ public class BattleSystem : MonoBehaviour
 
         yield return dialogueBox.TypeDialogue($"{enemy.Character.CharacterBase.GetName} challenges you!");
 
-        StartFirst();
-    }
-
-    void StartFirst()
-    {
-        if (player.Character.Speed >= enemy.Character.Speed)
-        {
-            ActionSelector();
-        }
-        else
-        {
-            StartCoroutine(EnemyTurn());
-        }
+        ActionSelector();
     }
 
     void ActionSelector()
@@ -72,11 +79,11 @@ public class BattleSystem : MonoBehaviour
                 break;
 
             case 2:
-                StartCoroutine(dialogueBox.TypeDialogue($"You felt {enemy.Character.CharacterBase.GetName} crawling at your skin."));
+                StartCoroutine(dialogueBox.TypeDialogue($"Mogege."));
                 break;
 
             case 3:
-                StartCoroutine(dialogueBox.TypeDialogue("Praise be to Lord Prosciutto!"));
+                StartCoroutine(dialogueBox.TypeDialogue("Praise be to Prosciutto!"));
                 break;
 
             case 4:
@@ -90,32 +97,53 @@ public class BattleSystem : MonoBehaviour
         dialogueBox.EnableActionSelect(true);
     }
 
-    IEnumerator EnemyTurn()
+    IEnumerator RunTurn(CombatAction playerAction)
     {
-        state = State.PerformAction;
+        state = State.RunningTurn;
 
-        var ability = enemy.Character.GetAbilityForEnemy();
-
-        yield return InitiateMove(enemy, player, ability);
-        if (state == State.PerformAction)
+        if (playerAction == CombatAction.Move)
         {
-            ActionSelector();
+            player.Character.CurrentAbility = player.Character.charAbility[currentAbility];
+            enemy.Character.CurrentAbility = enemy.Character.GetAbilityForEnemy();
+
+            //who moves first
+            bool playerGoesFirst = player.Character.Speed >= enemy.Character.Speed;
+
+            var firstChar = (playerGoesFirst) ? player : enemy;
+            var secondChar = (playerGoesFirst) ? enemy : player;
+
+            var secondUnit = secondChar.Character;
+
+            //first turn
+            yield return InitiateMove(firstChar, secondChar, firstChar.Character.CurrentAbility);
+            yield return RunAfterTurn(firstChar);
+            if (state == State.BattleOver) yield break;
+
+            if (secondUnit.HP > 0) //if character is not toasted, execute below
+            {
+                //second turn
+                yield return InitiateMove(secondChar, firstChar, secondChar.Character.CurrentAbility);
+                yield return RunAfterTurn(secondChar);
+                if (state == State.BattleOver) yield break;
+            }
         }
-    }
-
-    IEnumerator PlayerAttack()
-    {
-        state = State.PerformAction;
-
-        var ability = player.Character.charAbility[currentAbility];
-     
-        yield return InitiateMove(player, enemy, ability);
-
-        if (state == State.PerformAction)
+        else
         {
-            StartCoroutine(EnemyTurn());
+            if (playerAction == CombatAction.SwitchCharacter)
+            {
+                var selectedMember = characterParty.Characters[currentMember];
+                state = State.Busy;
+                yield return SwitchCharacter(selectedMember);
+            }
+            //Enemy's turn
+            var enemyAbility = enemy.Character.GetAbilityForEnemy();
+            yield return InitiateMove(enemy, player, enemyAbility);
+            yield return RunAfterTurn(enemy);
+            if (state == State.BattleOver) yield break;
         }
 
+        if (state != State.BattleOver)
+            ActionSelection();
     }
 
     void BattleOver(bool victory)
@@ -143,53 +171,61 @@ public class BattleSystem : MonoBehaviour
         yield return ShowStatusChange(source.Character);
 
         ability.Amount--;
-        yield return dialogueBox.TypeDialogue($"{source.Character.CharacterBase.GetName} used {ability.Ability.GetName}");
+        yield return dialogueBox.TypeDialogue($"{source.Character.CharacterBase.GetName} used {ability.Ability.GetName}.");
 
-        
-
-        if(ability.Ability.Category == AbilityCategory.Status)
+        if (CheckIfAttackHits(ability, source.Character, target.Character))
         {
-            yield return RunAbilityEffect(ability, source.Character, target.Character);
+            if (ability.Ability.Category == AbilityCategory.Status)
+            {
+                yield return RunAbilityEffect(ability.Ability.Effects, source.Character, target.Character, ability.Ability.Target);
+            }
+            else
+            {
+                target.HitAnimation();
+                var damageDetail = target.Character.TakeDamage(ability, source.Character);
+                yield return target._Hud.UpdateHealth();
+                yield return ShowDamage(damageDetail);
+            }
+
+            if(ability.Ability.SecondaryEffects != null && ability.Ability.SecondaryEffects.Count > 0 && target.Character.HP > 0)
+            {
+                foreach (var secondary in ability.Ability.SecondaryEffects)
+                {
+                    var random = UnityEngine.Random.Range(1, 101);
+                    if (random <= secondary.Chance)
+                    {
+                        yield return RunAbilityEffect(secondary, source.Character, target.Character, secondary.Target);
+                    }
+                }
+            }
+
+            //dead
+            if (target.Character.HP <= 0)
+            {
+                yield return dialogueBox.TypeDialogue($"{target.Character.CharacterBase.GetName} is toasted!");
+                target.DeathAnimation();
+                yield return new WaitForSeconds(2f);
+
+                CheckBattleOver(target);
+            }
         }
         else
         {
-            target.HitAnimation();
-            var damageDetail = target.Character.TakeDamage(ability, source.Character);
-            yield return target._Hud.UpdateHealth();
-            yield return ShowDamage(damageDetail);
+            yield return dialogueBox.TypeDialogue($"{source.Character.CharacterBase.GetName}'s attack missed!");
         }
-        
-        //dead
-        if (target.Character.HP <= 0)
-        {
-            yield return dialogueBox.TypeDialogue($"{target.Character.CharacterBase.GetName} is toasted");
-            target.DeathAnimation();
-            yield return new WaitForSeconds(2f);
 
-            CheckBattleOver(target);
-        }
-        //display damage dealt by status
-        source.Character.OnAfterTurn();
-        yield return ShowStatusChange(source.Character);
-        yield return source._Hud.UpdateHealth();
-        //if character dies after status
-        if (source.Character.HP <= 0)
-        {
-            yield return dialogueBox.TypeDialogue($"{source.Character.CharacterBase.GetName} is toasted");
-            source.DeathAnimation();
-            yield return new WaitForSeconds(2f);
-
-            CheckBattleOver(source);
-        }
     }
-    IEnumerator RunAbilityEffect(AbilityManager ability, CharacterManager source, CharacterManager target)
+    bool CheckIfAttackHits(AbilityManager ability, CharacterManager source, CharacterManager target)
     {
-        var effects = ability.Ability.Effects;
-
+        float accuracy = ability.Ability.Accuracy;
+        return UnityEngine.Random.Range(1, 101) <= accuracy; //return true if the criteria is met
+    }
+    IEnumerator RunAbilityEffect(AbilityEffect effects, CharacterManager source, CharacterManager target, AbilityTarget abilityTarget)
+    {
         //Stat changing
         if (effects.Boosts != null)
         {
-            if (ability.Ability.Target == AbilityTarget.Self)
+            if (abilityTarget == AbilityTarget.Self)
             {
                 source.ApplyBoost(effects.Boosts);
             }
@@ -215,6 +251,25 @@ public class BattleSystem : MonoBehaviour
             yield return dialogueBox.TypeDialogue(message);
         }
     }
+
+    IEnumerator RunAfterTurn(BattleManager source)
+    {
+        if (state == State.BattleOver) yield break; //won't continue taking status damage after battle is over
+        yield return new WaitUntil(() => state == State.RunningTurn); //pause until state goes back to runningturn in part selection screen
+        //display damage dealt by status
+        source.Character.OnAfterTurn();
+        yield return ShowStatusChange(source.Character);
+        yield return source._Hud.UpdateHealth();
+        //if character dies after status
+        if (source.Character.HP <= 0)
+        {
+            yield return dialogueBox.TypeDialogue($"{source.Character.CharacterBase.GetName} is toasted!");
+            source.DeathAnimation();
+            yield return new WaitForSeconds(2f);
+
+            CheckBattleOver(source);
+        }
+    }
     void CheckBattleOver(BattleManager toastedChar)
     {
         if (!toastedChar.IsPlayer)
@@ -225,13 +280,9 @@ public class BattleSystem : MonoBehaviour
             var nextChar = characterParty.HealthyCharacter();
             //send out next character if there is one
             if (nextChar != null)
-            {
                 OpenPartyScreen();
-            }
             else
-            {
                 BattleOver(false);
-            }
         }
         else
         {
@@ -263,21 +314,6 @@ public class BattleSystem : MonoBehaviour
         dialogueBox.EnableAbilitySelector(true);
     }
 
-    public void HandleUpdate()
-    {
-        if (state == State.ActionSelect)
-        {
-            ActionSelection();
-        } else if (state == State.AbilitySelect)
-        {
-            AbilitySelection();
-        } else if (state == State.PartyScreen)
-        {
-            HandlePartySelect();
-        }
-
-    }
-
     void OpenPartyScreen()
     {
         state = State.PartyScreen;
@@ -290,17 +326,13 @@ public class BattleSystem : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             if (currentMember < 3)
-            {
                 ++currentMember;
-            }
 
         }
         else if (Input.GetKeyDown(KeyCode.UpArrow))
         {
             if (currentMember > 0)
-            {
                 --currentMember;
-            }
         }
 
         partyScreen.UpdateMemberSelect(currentMember);
@@ -315,13 +347,22 @@ public class BattleSystem : MonoBehaviour
             }   
             if (selectedMember == player.Character)
             {
-                partyScreen.SetMessage("That's the same character, stoopid");
+                partyScreen.SetMessage("That's the same character, stoopid.");
                 return;
             }
-
+            dialogueBox.EnableActionSelect(false);
             partyScreen.gameObject.SetActive(false);
-            state = State.Busy;
-            StartCoroutine(SwitchCharacter(selectedMember));
+
+            if (previousState == State.ActionSelect)
+            {
+                previousState = null;
+                StartCoroutine(RunTurn(CombatAction.SwitchCharacter));
+            }
+            else
+            {
+                state = State.Busy;
+                StartCoroutine(SwitchCharacter(selectedMember));
+            }
         } 
         else if (Input.GetKeyDown(KeyCode.X))
         {
@@ -332,10 +373,8 @@ public class BattleSystem : MonoBehaviour
 
     IEnumerator SwitchCharacter(CharacterManager newCharacter)
     {
-        bool currentToastedChar = true;
         if (player.Character.HP > 0)
         {
-            currentToastedChar = false;
             yield return dialogueBox.TypeDialogue($"{player.Character.CharacterBase.GetName} retreats!");
             yield return new WaitForSeconds(1f);
         }
@@ -344,14 +383,7 @@ public class BattleSystem : MonoBehaviour
         dialogueBox.SetAbility(newCharacter.charAbility);
         yield return dialogueBox.TypeDialogue($"{newCharacter.CharacterBase.GetName} is out!");
 
-        if (currentToastedChar)
-        {
-            StartFirst();
-        } else
-        {
-            StartCoroutine(EnemyTurn());
-        }
-
+        state = State.RunningTurn;
     }
 
     void ActionSelection()
@@ -359,16 +391,12 @@ public class BattleSystem : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             if (currentAction < 2)
-            {
                 ++currentAction;
-            }
 
         } else if (Input.GetKeyDown(KeyCode.UpArrow))
         {
             if (currentAction > 0)
-            {
                 --currentAction;
-            }
         }
 
         dialogueBox.UpdateActionSelect(currentAction);
@@ -384,48 +412,37 @@ public class BattleSystem : MonoBehaviour
 
                 case 1:
                     //Party
+                    previousState = state;
                     OpenPartyScreen();
                     break;
 
                 case 2:
                     //Run
                     break;
-
             }
         }
-
     }
     void AbilitySelection()
     {
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             if (currentAbility > 0)
-            {
                 --currentAbility;
-            }
-
         }
         else if (Input.GetKeyDown(KeyCode.RightArrow))
         {
             if (currentAbility < player.Character.charAbility.Count - 1)
-            {
                 ++currentAbility;
-            }
         }
         else if (Input.GetKeyDown(KeyCode.UpArrow))
         {
             if (currentAbility > 1)
-            {
                 currentAbility -= 3;
-            }
-
         }
         else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             if (currentAbility < player.Character.charAbility.Count - 3)
-            {
                 currentAbility += 3;
-            }
         }
 
         dialogueBox.UpdateAbilitySelect(currentAbility, player.Character.charAbility[currentAbility]);
@@ -434,11 +451,8 @@ public class BattleSystem : MonoBehaviour
         {
             dialogueBox.EnableAbilitySelector(false);
             dialogueBox.EnableDialogue(true);
-            var ability = player.Character.charAbility[currentAbility];
+            StartCoroutine(RunTurn(CombatAction.Move));
 
-            //AnimationManager(ability.Ability.GetName);
-
-            StartCoroutine(PlayerAttack());
         } else if (Input.GetKeyDown(KeyCode.X))
         {
             dialogueBox.EnableAbilitySelector(false);

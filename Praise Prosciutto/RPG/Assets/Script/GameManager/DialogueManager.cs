@@ -21,12 +21,13 @@ public class DialogueManager : MonoBehaviour
     }
 
     Dialogue dialogue;
+    Action onDialogueFinished;
     int currentLine = 0;
     bool textIsOver;
 
     public bool IsShowingDialogue { get; private set; }
 
-    public IEnumerator ShowDialogue(Dialogue dialogue)
+    public IEnumerator ShowDialogue(Dialogue dialogue, Action onFinished = null)
     {
         yield return new WaitForEndOfFrame();
 
@@ -34,6 +35,8 @@ public class DialogueManager : MonoBehaviour
 
         IsShowingDialogue = true;
         this.dialogue = dialogue;
+        onDialogueFinished = onFinished;
+
         dialogueBox.SetActive(true);
         StartCoroutine(TypeDialogue(dialogue.Lines[0]));
     }
@@ -66,6 +69,7 @@ public class DialogueManager : MonoBehaviour
                 currentLine = 0;
                 IsShowingDialogue = false;
                 dialogueBox.SetActive(false);
+                onDialogueFinished?.Invoke();
                 OnCloseDialouge?.Invoke();
             }
         }

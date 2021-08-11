@@ -6,19 +6,16 @@ using UnityEngine;
 public class PlayerControl : MonoBehaviour
 {
     public float speed;
-    public Transform point; //determines where to move
-    public bool isMoving;
-    public LayerMask stopMovement;
-    public LayerMask interactableLayer;
-    public LayerMask enemyLayer;
+
     private Vector2 input;
 
     public event Action OnEncounter;
 
-    private Animator anim;
+    private Character character;
     private void Awake()
     {
-        anim = GetComponent<Animator>();
+        character = GetComponent<Character>();
+
     }
 
     public void HandleUpdate()
@@ -34,37 +31,7 @@ public class PlayerControl : MonoBehaviour
     //tile based movement
     void PlayerMovement()
     {
-
-        //input.x = Input.GetAxisRaw("Horizontal");
-        //input.y = Input.GetAxisRaw("Vertical");
-
-        ////player sprite moves towards Transform point
-        //transform.position = Vector3.MoveTowards(transform.position, point.position, speed * Time.deltaTime);
-
-        ////if player's sprite is close to Transform point, then it can continue to take movement input
-        //if (Vector3.Distance(transform.position, point.position) <= 0.0001f)
-        //{
-        //    if (Mathf.Abs(input.x) == 1f) //if left or right key is pressed
-        //    {
-        //        //draw a circle at Transform point, stops movement if it collides with a sprite that doesn't allow movement
-        //        if (!Physics2D.OverlapCircle(point.position + new Vector3(input.x, 0f, 0f), 0.2f, stopMovement))
-        //        {
-        //            StartCoroutine(Move(input.x, 0f));
-        //        }
-
-        //    }
-        //    else if (Mathf.Abs(input.y) == 1f) //if up or down key is pressed
-        //    {
-        //        if (!Physics2D.OverlapCircle(point.position + new Vector3(0f, input.y, 0f), 0.2f, stopMovement))
-        //        {
-        //            StartCoroutine(Move(0f, input.y));
-        //        }
-        //    }
-        //    anim.SetBool("Moving", isMoving);
-        //    anim.SetFloat("moveX", input.x);
-        //    anim.SetFloat("moveY", input.y);
-        //}
-        if (!isMoving)
+        if (!character.IsMoving)
         {
             input.x = Input.GetAxisRaw("Horizontal");
             input.y = Input.GetAxisRaw("Vertical");
@@ -78,59 +45,19 @@ public class PlayerControl : MonoBehaviour
             //if there is an input on horizontal and vertical keys
             if (input != Vector2.zero)
             {
-                anim.SetFloat("moveX", input.x);
-                anim.SetFloat("moveY", input.y);
-
-                //compute new target position  
-                var newPosition = transform.position;
-                newPosition.x += input.x;
-                newPosition.y += input.y;
-
-                if (StopMovement(newPosition))
-                {
-                    StartCoroutine(Move(newPosition));
-                }
+                StartCoroutine(character.Move(input, Encounter));
             }
         }
 
-        anim.SetBool("Moving", isMoving);
-
-    }
-
- 
-
-    IEnumerator Move(Vector3 newPosition)
-    {
-        isMoving = true;
-        //move the player from its current position to the newly computed position
-        //if the difference with player's current position and the newly computed position is greater than the small 0.001f, move player
-        while ((newPosition - transform.position).sqrMagnitude > Mathf.Epsilon)
-        {
-            transform.position = Vector3.MoveTowards(transform.position, newPosition, speed * Time.deltaTime);
-            yield return null;
-        }
-        transform.position = newPosition;
-        isMoving = false;
-
-        Encounter();
-    }
-
-    private bool StopMovement(Vector3 newPosition)
-    {
-        //draw a circle at Transform point, stops movement if it collides with a sprite that doesn't allow movement
-        if( Physics2D.OverlapCircle(newPosition, 0.1f, stopMovement | interactableLayer) != null)
-        {
-            return false;
-        }
-        return true;
+        character.HandleUpdate();
     }
 
     void Interact()
     {
-        var facingDirection = new Vector3(anim.GetFloat("moveX"), anim.GetFloat("moveY"));
+        var facingDirection = new Vector3(character.Animator.MoveX, character.Animator.MoveY);
         var interactPosition = transform.position + facingDirection;
 
-        var collider = Physics2D.OverlapCircle(interactPosition, 0.1f, interactableLayer);
+        var collider = Physics2D.OverlapCircle(interactPosition, 0.1f, GameLayer.Instance.InteractableLayer);
 
         if(collider != null)
         {
@@ -140,14 +67,15 @@ public class PlayerControl : MonoBehaviour
 
     private void Encounter()
     {
-        if (Physics2D.OverlapCircle(transform.position, 0.1f, enemyLayer) != null)
+        if (Physics2D.OverlapCircle(transform.position, 0.1f, GameLayer.Instance.EnemyLayer) != null)
         {
             if (UnityEngine.Random.Range(1, 101) <= 50f)
             {
                 OnEncounter();
-                anim.SetBool("Moving", false);
+                character.Animator.IsMoving = false;
             }
         }
 
     }
+
 }

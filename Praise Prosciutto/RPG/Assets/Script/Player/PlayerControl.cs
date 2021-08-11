@@ -9,6 +9,7 @@ public class PlayerControl : MonoBehaviour
     public Transform point; //determines where to move
     public bool isMoving;
     public LayerMask stopMovement;
+    public LayerMask interactableLayer;
     public LayerMask enemyLayer;
     private Vector2 input;
 
@@ -23,6 +24,10 @@ public class PlayerControl : MonoBehaviour
     public void HandleUpdate()
     {
         PlayerMovement();
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            Interact();
+        }
         
     }
 
@@ -89,19 +94,10 @@ public class PlayerControl : MonoBehaviour
         }
 
         anim.SetBool("Moving", isMoving);
+
     }
 
-    //IEnumerator Move(float x, float y)
-    //{
-    //    isMoving = true;
-
-    //    point.position += new Vector3(x, y, 0f); //move up or down
-
-    //    yield return null;
-
-    //    isMoving = false;
-
-    //}
+ 
 
     IEnumerator Move(Vector3 newPosition)
     {
@@ -122,11 +118,24 @@ public class PlayerControl : MonoBehaviour
     private bool StopMovement(Vector3 newPosition)
     {
         //draw a circle at Transform point, stops movement if it collides with a sprite that doesn't allow movement
-        if( Physics2D.OverlapCircle(newPosition, 0.1f, stopMovement) != null)
+        if( Physics2D.OverlapCircle(newPosition, 0.1f, stopMovement | interactableLayer) != null)
         {
             return false;
         }
         return true;
+    }
+
+    void Interact()
+    {
+        var facingDirection = new Vector3(anim.GetFloat("moveX"), anim.GetFloat("moveY"));
+        var interactPosition = transform.position + facingDirection;
+
+        var collider = Physics2D.OverlapCircle(interactPosition, 0.1f, interactableLayer);
+
+        if(collider != null)
+        {
+            collider.GetComponent<Interactable>()?.Interact();
+        }
     }
 
     private void Encounter()

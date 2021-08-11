@@ -68,6 +68,8 @@ public class BattleDialogue : MonoBehaviour
 
     public void UpdateAbilitySelect(int select, AbilityManager ability)
     {
+        Color32 c = new Color32(94, 94, 94, 255);
+        Color32 d = new Color32(205, 134, 30, 255);
         for (int x = 0; x < abilityText.Count; ++x)
         {
             if (x == select)
@@ -76,13 +78,17 @@ public class BattleDialogue : MonoBehaviour
             }
             else
             {
-                Color32 c = new Color32(94, 94, 94, 255);
                 abilityText[x].color = c;
             }
         }
 
         amountText.text = $"Amount\n{ability.Amount}/{ability.Ability.Amount}";
         typeText.text = ability.Ability.Element.ToString();
+
+        if (ability.Amount <= 0)
+            amountText.color = d;
+        else
+            amountText.color = c;
     }
 
     public void UpdateActionSelect(int select)

@@ -143,7 +143,7 @@ public class BattleSystem : MonoBehaviour
         }
 
         if (state != State.BattleOver)
-            ActionSelection();
+            ActionSelector();
     }
 
     void BattleOver(bool victory)
@@ -449,6 +449,9 @@ public class BattleSystem : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Z))
         {
+            var ability = player.Character.charAbility[currentAbility];
+            if (ability.Amount <= 0) return;
+
             dialogueBox.EnableAbilitySelector(false);
             dialogueBox.EnableDialogue(true);
             StartCoroutine(RunTurn(CombatAction.Move));

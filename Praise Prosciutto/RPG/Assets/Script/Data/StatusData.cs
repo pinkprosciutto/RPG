@@ -57,7 +57,7 @@ public class StatusData
                         character.StatusChange.Enqueue($"{character.CharacterBase.GetName} is immobilized by the power of love.");
                         return false; //character can't perform move, immobilized by love 
                     }
-                    return false; 
+                    return true; 
                 }
             }
 
@@ -73,7 +73,7 @@ public class StatusData
                     if (Random.Range(1, 5) == 1)
                     {
                         character.CureStatus();
-                        character.StatusChange.Enqueue($"{character.CharacterBase.GetName} finally broke out of ice.");
+                        character.StatusChange.Enqueue($"{character.CharacterBase.GetName} is unthawed.");
                         return true; //character unfreezes 
                     }
                     character.StatusChange.Enqueue($"{character.CharacterBase.GetName} is ice solid.");
